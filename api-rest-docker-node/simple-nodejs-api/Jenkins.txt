@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+    
+    environment {
+        NODEJS_HOME = tool name: 'node'
+        PATH = "${env.NODEJS_HOME}/bin:${env.PATH}"
+    }
+    
+    stages {
+        stage('Copiando repositorio') {
+            steps {
+                git branch: 'main', credentialsId: 'ghp_c9LzQhSRiB7XP3hLxCL', url: 'https://github.com/FerGro/CI-CD-Pipeline-de-Rest-API-usando-Jenkins'
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                bat 'npm install (las dependencias de tu proyecto)'
+            }
+        }
+        
+        stage("Build Image") {
+            steps {
+                script {
+                    docker.build('usuario/nombre de la imagen', '.')
+                }
+            }
+        }
+        
+        stage ('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker_cred', passwordVariable: 'DOCKERHUB_PASSWORD', usernameVariable: 'DOCKERHUB_USERNAME')]){
+                    bat 'docker login -u DOCKERHUB_USERNAME -p DOCKERHUB_PASSWORD'
+                    bat 'docker tag usuario/nombree la imagen usuario/nombre de la imagen'
+                    bat 'docker push usuario/nombre de la inagen'
+                    bat 'docker logout'
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                bat 'npm run dev'
+            }
+        }
+    }
+}
